@@ -1,105 +1,154 @@
-let btn=document.querySelector("#btn")
-let content=document.querySelector("#content")
-let voice=document.querySelector("#voice")
 
-function speak(text){
-    let text_speak=new SpeechSynthesisUtterance(text)
-    text_speak.rate=1
-    text_speak.pitch=1
-    
-    text_speak.volume=1
-    text_speak.lang="hi-GB"
-    window.speechSynthesis.speak(text_speak)
+const btn = document.querySelector("#btn");
+const content = document.querySelector("#content");
+const voice = document.querySelector("#voice");
+
+// Text-to-speech
+function speak(text) {
+    if (!("speechSynthesis" in window)) {
+        content.innerText = text;
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.lang = "en-IN";
+
+    window.speechSynthesis.speak(utterance);
 }
 
-function wishMe(){
-    let day=new Date()
-    let hours=day.getHours()
-    if(hours>=0 && hours<12){
-        speak("Good Morning Sir")
+// Check browser speech recognition support
+const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+let recognition = null;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+        const transcript =
+            event.results[event.resultIndex][0].transcript;
+
+        content.innerText = transcript;
+        takeCommand(transcript.toLowerCase());
+    };
+
+    recognition.onerror = (event) => {
+        content.innerText = "Microphone error: " + event.error;
+        btn.style.display = "flex";
+        voice.style.display = "none";
+    };
+
+    recognition.onend = () => {
+        btn.style.display = "flex";
+        voice.style.display = "none";
+    };
+} else {
+    content.innerText =
+        "Voice recognition is not supported in this browser.";
+}
+
+// Start listening
+btn.addEventListener("click", () => {
+    if (!recognition) {
+        speak("Voice recognition is not supported in this browser.");
+        return;
     }
-    else if(hours>=12 && hours<16){
-        speak("Good Afternoon Sir")
-    }else{
-        speak("Good Evening Sir")
+
+    try {
+        content.innerText = "Listening...";
+        btn.style.display = "none";
+        voice.style.display = "block";
+        recognition.start();
+    } catch (error) {
+        content.innerText = "Please try again.";
+        btn.style.display = "flex";
+        voice.style.display = "none";
+    }
+});
+
+// Commands
+function takeCommand(message) {
+    btn.style.display = "flex";
+    voice.style.display = "none";
+
+    if (message.includes("hello")) {
+        speak("Hello sir, what can I help you with?");
+    }
+
+    else if (message.includes("who are you")) {
+        speak("I am Jarvis, your virtual assistant, created by Buddhadeb sir.");
+    }
+
+    else if (message.includes("time")) {
+        const time = new Date().toLocaleTimeString("en-IN", {
+            hour: "numeric",
+            minute: "numeric"
+        });
+        speak("The time is " + time);
+    }
+
+    else if (message.includes("date")) {
+        const date = new Date().toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+        speak("Today's date is " + date);
+    }
+
+    else if (message.includes("open youtube")) {
+        speak("Opening YouTube");
+        window.open("https://www.youtube.com", "_blank");
+    }
+
+    else if (message.includes("open google")) {
+        speak("Opening Google");
+        window.open("https://www.google.com", "_blank");
+    }
+
+    else if (message.includes("open facebook")) {
+        speak("Opening Facebook");
+        window.open("https://www.facebook.com", "_blank");
+    }
+
+    else if (message.includes("open instagram")) {
+        speak("Opening Instagram");
+        window.open("https://www.instagram.com", "_blank");
+    }
+
+    else if (message.includes("open whatsapp")) {
+        speak("Opening WhatsApp");
+        window.open("https://web.whatsapp.com", "_blank");
+    }
+
+    else if (message.includes("open calculator")) {
+        speak("Please open your calculator app.");
+    }
+
+    else if (message.includes("open")) {
+        speak("Searching for " + message.replace("open", ""));
+        window.open(
+            "https://www.google.com/search?q=" +
+            encodeURIComponent(message.replace("open", "")),
+            "_blank"
+        );
+    }
+
+    else {
+        speak("I heard you say " + message +
+              ". I don't know that command yet.");
     }
 }
-window.addEventListener('load',()=>{
-    wishMe()
-})
-let speechRecognition= window.speechRecognition || window.webkitSpeechRecognition
-let recognition =new speechRecognition()
-recognition.onresult=(Event)=>{
-   let currentIndex=Event.resultIndex
-   let transcript=Event.results[currentIndex][0].transcript
-   content.innerText=transcript
-    takeCommand(transcript.toLowerCase())
-}
-btn.addEventListener("click",()=>{
-    recognition.start()
-    btn.style.display="none"
-    voice.style.display="block"
-})
-function takeCommand(message){
-    btn.style.display="flex"
-    voice.style.display="none"
-    if(message.includes("hello")){
-        speak("hello sir,what can i help you?")
-    }
-    else if(message.includes("who are you")){
-        speak("i am virtual assistant, created by buddhadeb sir")
-    }
-    else if(message.includes("open youtube")){
-        speak("opening youtube...")
-        window.open("https://www.youtube.com")
-    }
-    else if(message.includes("open google")){
-        speak("opening google...")
-        window.open("https://www.google.com")
-    }
-    else if(message.includes("open facebook")){
-        speak("opening facebook...")
-        window.open("https://www.facebook.com")
-    }
-    else if(message.includes("open calculator")){
-        speak("opening calculator...")
-        window.open("calculator://")
-    }
-    else if(message.includes("open instagram")){
-        speak("opening instagram...")
-        window.open("https://www.instagram.com")
-    }
-    else if(message.includes("open")){
-        speak("opening...")
-        window.open(`https://www.youtube.com/results?search_query=${message}`)
-    }
-
-    else if(message.includes("open whatsapp")){
-        speak("opening whatsapp...")
-        window.open("WhatsApp://")
-    }
-    else if(message.includes("time")){
-        let time=new Date().toLocaleString(undefined,{hour:"numeric",minute:"numeric"})
-        speak(time)
-    }
-    else if(message.includes("date")){
-        let =new dste().toLocaleString(undefined,{day:"numeric",month:"short"})
-        speak(time)
-    }
-    
-    
-    else{
-        let finalText="this is what i found on internate regarding" + message.replace("jarvis","") || message.replace
-speak(finalText)
-        window.open(`https://www.google.com/search?q=${message.replace("jarvis","")}`,"_blank")
-        
-    }
-     
-
-    }
-
-    
-    
-
 
 
